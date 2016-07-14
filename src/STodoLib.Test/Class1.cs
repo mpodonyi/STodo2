@@ -1,28 +1,32 @@
 ﻿using Xunit;
+using STodoLib;
+using System.IO;
 
-namespace MyFirstDotNetCoreTests
+namespace STodoLib.Test
 {
-    public class Class1
+    public class FileParserTests
     {
         [Fact]
-        public void PassingTest()
+        public void GetSectionsTest()
         {
-            var tt = new STodoLib.Class1();
+            var obj = TodoObjectFactory.GetFileObject(@"TestData\Todo.txt");
 
-            tt.Fire();
 
-            Assert.Equal(4, Add(2, 2));
+            var sect = obj.GetTodoSections();
+
+            Assert.Equal(2, sect.Count);
+
+            Assert.Equal("whatever", sect[0].Text.Trim());
+
+            Assert.Equal("whatever2", sect[1].Text.Trim());
+
+
+
         }
 
-        [Fact]
-        public void FailingTest()
-        {
-            Assert.Equal(5, Add(2, 2));
-        }
 
-        int Add(int x, int y)
-        {
-            return x + y;
-        }
+
+
     }
+
 }
