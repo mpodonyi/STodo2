@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace STodoLib
@@ -30,42 +31,37 @@ namespace STodoLib
 
     public class TodoFileObject : TodoObject<TodoFileSection, TodoItem>, IDisposable
     {
-        private readonly MemoryStream stream;
+        // private readonly MemoryStream stream;
+        private readonly string s_stream;
 
 
         public TodoFileObject(string path)
         {
-            stream = new MemoryStream();
-            using (FileStream fs = File.OpenRead(path))
-            {
-                fs.CopyTo(stream);
-            }
+            s_stream = File.ReadAllText(path);
+
+            //stream = new MemoryStream();
+            //using (FileStream fs = File.OpenRead(path))
+            //{
+            //    fs.CopyTo(stream);
+            //}
         }
 
         public void Dispose()
         {
-            if (stream != null)
-                try
-                {
-                    stream.Dispose();
-                }
-                catch { }
+            //if (stream != null)
+            //    try
+            //    {
+            //        stream.Dispose();
+            //    }
+            //    catch { }
         }
 
 
         internal string GetText(TodoToken todoToken)
         {
-            stream.Seek(todoToken.StartIndex, SeekOrigin.Begin);
-            using (StreamReader reader = new StreamReader(stream, System.Text.Encoding.UTF8, true, 128, true))
+            if (todoToken.ItemType == ItemTypes.Section)
             {
-                if (todoToken.ItemType == ItemTypes.Section)
-                {
-                    long count = todoToken.EndIndex - todoToken.StartIndex;
-
-                    char[] buffer = new char[(int)count];
-                    reader.Read(buffer, (int)todoToken.StartIndex, (int)count);
-                    return new string(buffer);
-                }
+                return s_stream.Substring((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
             }
 
             return null;
@@ -160,21 +156,47 @@ namespace STodoLib
         //}
 
 
+        private string ReadLine(StringReader reader, ref int _pos)
+        {
+            int startpos = _pos;
+            string retval = null;
+
+            char chr;
+            while ((chr = (char)reader.Read()) != -1)
+            {
+                _pos++;
+                if (chr == '\r' || chr == '\n')
+                {
+                    char peeked = (char)reader.Peek();
+                    if (chr == '\r' && peeked != -1 && peeked == '\n')
+                    {
+                        reader.Read();
+                        _pos++;
+                    }
+                    break;
+                }
+                else
+                {
+                    retval += chr;
+                }
+            }
+            return retval;
+        }
+
 
 
         internal IEnumerable<TodoToken> GetObject(int startIndex, ItemTypes itemType)
         {
-            stream.Seek(startIndex, SeekOrigin.Begin);
-
             TodoToken current = new TodoToken(ItemTypes.None, 0, 0);
 
-            long streamStart = startIndex;
+            int streamStart = startIndex;
+            int streamcurr = streamStart;
 
-            using (StreamReader reader = new StreamReader(stream, System.Text.Encoding.UTF8, true, 0, true))
+            using (StringReader reader = new StringReader(s_stream.Substring(startIndex)))
             {
                 while (reader.Peek() >= 0)
                 {
-                    string line = reader.ReadLine();
+                    string line = ReadLine(reader, ref streamcurr);
 
                     if (string.IsNullOrWhiteSpace(line))
                     {
@@ -184,8 +206,8 @@ namespace STodoLib
                             if (itemType == ItemTypes.TodoItem)
                                 yield return current;
 
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.Section)
                         {
@@ -193,41 +215,41 @@ namespace STodoLib
                             if (itemType == ItemTypes.Section)
                                 yield return current;
 
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.WhiteLine)
                         {
                             _lineCache.Add(current);
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                         else
                         {
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                     }
                     else if (IsTextLine(line))
                     {
                         if (current.ItemType == ItemTypes.TodoItem)
                         {
-                            current.EndIndex = reader.BaseStream.Position;
+                            current.EndIndex = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.Section)
                         {
-                            current.EndIndex = reader.BaseStream.Position;
+                            current.EndIndex = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.WhiteLine)
                         {
                             _lineCache.Add(current);
-                            current = new TodoToken(ItemTypes.Section, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                         else
                         {
-                            current = new TodoToken(ItemTypes.Section, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
 
                     }
@@ -239,8 +261,8 @@ namespace STodoLib
                             if (itemType == ItemTypes.TodoItem)
                                 yield return current;
 
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.Section)
                         {
@@ -248,19 +270,19 @@ namespace STodoLib
                             if (itemType == ItemTypes.Section)
                                 yield return current;
 
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.WhiteLine)
                         {
                             _lineCache.Add(current);
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                         else
                         {
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, reader.BaseStream.Position);
-                            streamStart = reader.BaseStream.Position;
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
                         }
                     }
                 }

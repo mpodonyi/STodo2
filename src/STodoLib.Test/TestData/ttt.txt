@@ -1,0 +1,253 @@
+TodoSourceURL: http://confluence-labs:8090/display/CSPDEV/User+Management
+Author: Mike Podonyi
+[X]  install in dev Api Service and Database
+
+[X] document typeid
+[X] document username merchant and cashier
+[X] link to usertype
+[X] add error response messages to all documentation
+[X] add docu about user id replacemenet
+[X] bring internal docu up to date (e.g. 2 new fields in the Pos.User table)
+
+
+[X] twofactorauth relink from deviceapi
+[X] maximum length for string values
+
+
+[X] missing username leads to internal server error
+[X] missing password generates token
+
+
+
+BlmService
+[X] 999 Remaining general CSP API and console issues [All other]
+
+Payment Service
+[X] 998 Remaining general CSP API and console issues [Payment]
+[X] 1007 ???
+
+TransactionDB (4.5.8.0)
+[X] 898 - Implementation of User Management
+[X] 933 - Key prefix missing on operational parameter keys (filipe)
+[X] 888 - Resource "devices"
+[X] 1004 -  If [AuthenticationClientId] field in [CspApi].[Authentication] table is multiplied API responds with HTML error 500
+
+
+CspApi (1.0.5.0)
+[X] 898 - Implementation of User Management
+[X] 1002 - Request to add more logging to CSP API /authorize
+[X] 886- Change CSP API Header and Body to include "csp" so as not confused with native HTTP header/body messages
+[X] 888 - Resource "devices"
+[X] 1008 - OAuth2 Authentication for CspApi (Ressource Owner Password Credential Mode)
+
+
+Portal (1.16.0.0)
+[X] 930 - User Management on CSP API - Device Mode screen
+[X] 928 - CSP API - Device Mode Screen
+[X] 929 - Device Management on CSP API - Device Mode screen
+[X] 898 - Implementation of User Management
+[X] 933 - Key prefix missing on operational parameter keys (filipe)
+[X] 999 Remaining general CSP API and console issues [All other]
+[X] 998 Remaining general CSP API and console issues [Payment]
+[X] 1000 In the console menu "Card" should be renamed to "Card Payment" to comply with documentation
+[X] 1006 API request/response field description missing in documentation
+[X] 886- Change CSP API Header and Body to include "csp" so as not confused with native HTTP header/body messages
+
+
+
+
+[X] add id
+
+
+
+ {
+                    "name": "rspMsg" ,
+                    "type": "string (1 .. 8000)" ,
+                    "typeModel": false ,
+                    "optional": true ,
+                    "description": "Response Message. This field will only be provided if response status code is 500 in which case it will contain a description of why the request was unsuccessful, without any sensitive data. This message should be displayed on the POS for the user to see. The message will be in the language associated with the userId."
+                }
+
+TodoSourceURL: http://confluence-labs:8090/display/CSPDEV/User+Management
+Author: Mike Podonyi
+
+
+[X] do you want to know which user does what this means i have to encrypt UserId
+[X] move settings values in web.config
+[X] reorder Pos.User Columns
+[X] for now assume cashier has Email Address
+[X] dovico tracking clarification
+[X] check jira assigned to me from filipe
+[X] merge Portal Branch back into trunk
+[X] merge transaction branch back int o the trunk
+[X] endpoint documentations
+[X] main documentation
+[X] could we have a new dedicated db server
+
+
+
+[X] Read
+[X] User Roles: Clerk Merchant autoreg
+[X] more than one autoreg because if compromissed
+[X] refreshtoken not neccessary
+[X] new tables in TransactionDb or FrontGate
+[X] get a unified machinekey
+[X] Pos.User better Csp .User becaue access not only from pos device possible
+[X] multitenancy
+[X] how to revoke permission
+
+[X] maybe implement JWT
+[X] document MSIdentity Framework tables
+[X] more logging
+
+[X] remove password from Client table
+[X] remove ClientId
+[X] move Merchant/DeviceMode explanation to Confluence
+[X] Password Validation Rules different for Merchant and cashier should go in Operational Parameter
+
+[X] test that Transaction and Merchant Route are checked for AntiXss
+
+[X] add route to documentation for validation the email
+[X] Block Get Route for User which are still assigned to AutoReg
+
+[X] change FisrtName and LastName to  [nvarchar](256) NOT NULL,
+
+[X] if email is optional for Cashier and the Cashier sets that value should we also block access for cashiers (except edit) until its mail address is validated
+[X] implement emailservice
+[X] gzip compression our payload maybe not big enough
+
+[X] reject token when token arrives and user is not more active
+[X] test Notify
+[X] kill all MPs in code
+
+[X] test user with more than one role
+[X] special jsonformatter only for transaction route
+[X] ask david if his sql scripts are in trunk
+[X] only check mail validation success when email address exist
+[X] allow cashier access to his edit Route
+
+[X] merge together Permission and put to the top
+[X] make Can Keep Secret to only Client Credentials
+[X] As discussed, please research feasibility of option 3 - use ROPC for Web POS instead of CC (http://confluence-labs:8090/display/CSPDEV/User+Management?focusedCommentId=11763733#comment-11763733)
+MerchantId in HttpHeader maybe
+[X] copy DB to Dev
+
+[X] remove role from token
+
+[X] set LastUpdateDate for User
+[X] Increments the access failed count for the user and if the failed access account is greater than or equal to the MaxFailedAccessAttempsBeforeLockout, the user will be locked out for the next DefaultAccountLockoutTimeSpan and the AccessFailedCount will be reset to 0. This is used for locking out the user account.
+
+[X] TypeId or route remove one of it
+[X] MaxFailedAccessAttempsBeforeLockout == 0 should disable it
+
+
+[X] Email templates should go in Operational Parameter
+[X] in ChangeUser Api when an email address is changed, the user interface is blocked until mail address is confirmed, like in create user
+[X] create API which creates one time password for cashier by merchant
+[X] create API which handles two factor authentication (once per user and per day)
+
+
+[X] dont forget to move operational parameter into database script
+[X] operational parameter in confluence
+
+
+[X] how to react when userid sent in as argument is invalid but it passed all other validations (maybe check user id if exist before doing other stuff)
+
+[X] remove database migration table
+[X] make unit test more stable by regenerating test users at the beginning and deleting in the end
+[X] check edit route merchant only merchant and cashier only cashiers
+[X] remove type from bodies... it is defined through the route
+
+[X] applicationType rename cankeepsecrt to cleintaut and the other one to ROPC
+
+[X]  ensure that  Cannot keep secret only is ROPC and the other one only is ClientCredentials
+[X] merchant route not accessible by cashier
+
+
+[X] add TokenVerificationDate to Pos.User table
+[X] TwoFactorEnbled not set for newly created merchant and client
+[X] user uppercase
+[X] null value in response
+[X] make mail response configurable
+
+[X] send out mails not html formatted
+
+
+
+[X] work on portal make old stuff work with new OAuth2 again (MerchantMode and ClientCredentialMode)
+[X]  "Authorize" menu over Transaction Menu which explains Token creation
+[X] create overview and example page
+[X] remove Client Id and Password from CSP API table
+[X] create workitems:
+[X]      httprequestheader should appear before sending request and editable 939
+[X]      remove password and clientid field (encoded in token) from documentation and defaults 940
+[X]      remove password field from FrontGate and TransactionDB CspApi.Client table 972
+[X]      Add OAuth required Features to Transaction Database 973
+[X]      add Authorize menu with example functionality for mode ClientCredential (and User?) 941
+[X]      change api to use ClientCredentials 942
+[X]      implement OAuth ClientCredential mode in API
+
+[X] < p >Calls to the CSP API will always include a “clientId” field. This is so CSP knows who the consumer is and what mode the API is operating in. Please contact Planet Payment for your unique identifier (and passcode).</ p >
+
+[X] check that invalid json error response still brings back the ReasonPhrase
+[X] change CspApi].[ValidateRequest
+[X] bearer token invalid
+[X] bearer token expired
+[X] invalid clientid
+
+
+
+[X] merge system control center back from branch project inspiration to trunk
+[X] resharper for visual studio 2015
+
+[X] send sql script which generates Secret for Client Credential mode to jakub
+[X] prepare scripts and releases for jakub 
+
+
+[X] jira issue for filipe to put how Datasync works in JIRA
+
+
+
+
+[X]  please take not of passwords in Clienttable because this will be removed and encoded in other table
+[X] how to move it up
+[X] how to handle 896
+[X] apply to dev
+[X] set all bugs to qa pending and assign to jakub
+[X] release portal and csp api
+[X] send mail
+[X] install frontgate and transactiondb in conjunction to each other
+[X] dont forget to tag
+
+
+[X] update the portal in the release package
+[X] set back the redirect of the product in DEV
+[X] check on Filipes hotfix
+
+ReportService:
+
+[X]  983 
+- no release required
+
+
+BlmService:
+
+[X]  984
+[X] 755 from filipe
+
+[X] Release BlmService
+
+[X]  update package Global Api Service too
+
+Portal
+
+[X]  985
+[X]  986 -
+[X]       test telmex
+[X]  987 - Reversal
+
+
+
+
+
+
