@@ -10,7 +10,7 @@ namespace STodoLib
 {
     public static class TodoObjectFactory
     {
-        public static TodoObject<TodoFileSection, TodoItem> GetFileObject(string path)
+        public static TodoObject<TodoFileSection, TodoFileItem> GetFileObject(string path)
         {
             return new TodoFileObject(path);
         }
@@ -29,7 +29,7 @@ namespace STodoLib
 
     }
 
-    public class TodoFileObject : TodoObject<TodoFileSection, TodoItem>, IDisposable
+    public class TodoFileObject : TodoObject<TodoFileSection, TodoFileItem>, IDisposable
     {
         // private readonly MemoryStream stream;
         private readonly string s_stream;
@@ -56,6 +56,11 @@ namespace STodoLib
             //    catch { }
         }
 
+        internal string GetDebugString(int start, int length)
+        {
+            return s_stream.Substring(start, length);
+        }
+
 
         internal string GetText(TodoToken todoToken)
         {
@@ -63,8 +68,23 @@ namespace STodoLib
             {
                 return s_stream.Substring((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
             }
+            if (todoToken.ItemType == ItemTypes.TodoItem)
+            {
+                string retval =s_stream.Substring((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
+
+                return TrimStart(TrimStart(retval, "[]"), "[x]");
+            }
 
             return null;
+        }
+
+        private static string TrimStart(string word, string trimWord)
+        {
+            var retVal = word.TrimStart();
+
+            return retVal.StartsWith(trimWord)
+                       ? retVal.Substring(trimWord.Length)
+                       : word;
         }
 
 
@@ -109,51 +129,7 @@ namespace STodoLib
             public long EndIndex { get; set; }
         }
 
-        //public string ReadLine(StreamReader reader, out character)
-        //{
-        //    string str;
-        //    if (this.charPos == this.charLen && this.ReadBuffer() == 0)
-        //    {
-        //        return null;
-        //    }
-        //    StringBuilder stringBuilder = null;
-        //    do
-        //    {
-        //        int num = this.charPos;
-        //        do
-        //        {
-        //            char chr = this.charBuffer[num];
-        //            if (chr == '\r' || chr == '\n')
-        //            {
-        //                if (stringBuilder == null)
-        //                {
-        //                    str = new string(this.charBuffer, this.charPos, num - this.charPos);
-        //                }
-        //                else
-        //                {
-        //                    stringBuilder.Append(this.charBuffer, this.charPos, num - this.charPos);
-        //                    str = stringBuilder.ToString();
-        //                }
-        //                this.charPos = num + 1;
-        //                if (chr == '\r' && (this.charPos < this.charLen || this.ReadBuffer() > 0) && this.charBuffer[this.charPos] == '\n')
-        //                {
-        //                    this.charPos = this.charPos + 1;
-        //                }
-        //                return str;
-        //            }
-        //            num++;
-        //        }
-        //        while (num < this.charLen);
-        //        num = this.charLen - this.charPos;
-        //        if (stringBuilder == null)
-        //        {
-        //            stringBuilder = new StringBuilder(num + 80);
-        //        }
-        //        stringBuilder.Append(this.charBuffer, this.charPos, num);
-        //    }
-        //    while (this.ReadBuffer() > 0);
-        //    return stringBuilder.ToString();
-        //}
+      
 
 
         private string ReadLine(StringReader reader, ref int _pos)
@@ -161,9 +137,11 @@ namespace STodoLib
             int startpos = _pos;
             string retval = null;
 
+            int r;
             char chr;
-            while ((chr = (char)reader.Read()) != -1)
+            while ((r = reader.Read()) != -1)
             {
+                chr = (char)r;
                 _pos++;
                 if (chr == '\r' || chr == '\n')
                 {
@@ -235,10 +213,12 @@ namespace STodoLib
                         if (current.ItemType == ItemTypes.TodoItem)
                         {
                             current.EndIndex = streamcurr;
+                            streamStart = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.Section)
                         {
                             current.EndIndex = streamcurr;
+                            streamStart = streamcurr;
                         }
                         else if (current.ItemType == ItemTypes.WhiteLine)
                         {
@@ -319,11 +299,10 @@ namespace STodoLib
 
         }
 
-        public override ReadOnlyCollection<TodoItem> GetTodoItems()
+        public override ReadOnlyCollection<TodoFileItem> GetTodoItems()
         {
-            throw new Exception();
-
-
+            return (from i in GetObject(0, ItemTypes.TodoItem)
+                    select new TodoFileItem(i, this)).ToList().AsReadOnly();
         }
     }
 
@@ -334,10 +313,9 @@ namespace STodoLib
 
     }
 
-    public class TodoItem
+    public abstract class TodoItem
     {
-
-
+        public abstract string Text { get; set; }
     }
 
 
@@ -362,6 +340,40 @@ namespace STodoLib
             {
                 throw new NotImplementedException();
             }
+        }
+
+        public override string ToString()
+        {
+            return _TodoFileObject.GetDebugString((int)_TodoToken.StartIndex, (int)(_TodoToken.EndIndex - _TodoToken.StartIndex));
+        }
+    }
+
+    public class TodoFileItem : TodoItem
+    {
+        private readonly TodoFileObject.TodoToken _TodoToken;
+        private readonly TodoFileObject _TodoFileObject;
+
+        internal TodoFileItem(TodoFileObject.TodoToken todoToken, TodoFileObject todoFileObject)
+        {
+            _TodoToken = todoToken;
+            _TodoFileObject = todoFileObject;
+        }
+
+        public override string Text
+        {
+            get
+            {
+                return _TodoFileObject.GetText(_TodoToken);
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override string ToString()
+        {
+            return _TodoFileObject.GetDebugString((int)_TodoToken.StartIndex,(int) (_TodoToken.EndIndex - _TodoToken.StartIndex));
         }
 
 
