@@ -19,7 +19,7 @@ namespace STodoLib
 
 
     public abstract class TodoObject<TSect, TItem>
-        where TSect : TodoSection
+        where TSect : TodoSection<TItem>
         where TItem : TodoItem
     {
         public abstract ReadOnlyCollection<TSect> GetTodoSections();
@@ -70,7 +70,7 @@ namespace STodoLib
             }
             if (todoToken.ItemType == ItemTypes.TodoItem)
             {
-                string retval =s_stream.Substring((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
+                string retval = s_stream.Substring((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
 
                 return TrimStart(TrimStart(retval, "[]"), "[x]");
             }
@@ -97,8 +97,8 @@ namespace STodoLib
             TodoItem = 3,
         }
 
-        private List<TodoToken> _lineCache = new List<TodoToken>();
-
+        private readonly SortedList<int, TodoToken> _lineCache = new SortedList<int, TodoToken>();
+        private bool _ParsingComplete = false;
 
         private bool IsTodo(string line)
         {
@@ -115,7 +115,7 @@ namespace STodoLib
 
         internal class TodoToken
         {
-            public TodoToken(ItemTypes itemTypeFlag, long startIndex, long endIndex)
+            public TodoToken(ItemTypes itemTypeFlag, int startIndex, int endIndex)
             {
                 ItemType = itemTypeFlag;
                 StartIndex = startIndex;
@@ -124,12 +124,12 @@ namespace STodoLib
 
             public ItemTypes ItemType { get; }
 
-            public long StartIndex { get; }
+            public int StartIndex { get; }
 
-            public long EndIndex { get; set; }
+            public int EndIndex { get; set; }
         }
 
-      
+
 
 
         private string ReadLine(StringReader reader, ref int _pos)
@@ -161,13 +161,165 @@ namespace STodoLib
             return retval;
         }
 
+        //internal IEnumerable<TodoToken> GetObject(int startIndex, Func<TodoToken, bool> func)
+        //{
+        //    TodoToken current = new TodoToken(ItemTypes.None, 0, 0);
+
+        //    if (_lineCache.Count > 0)
+        //    {
+        //        foreach (int key in _lineCache.Keys.Where(k => k >= startIndex))
+        //        {
+        //            current = _lineCache[key];
+        //            if (current.ItemType == itemType)
+        //                yield return current;
+        //        }
+
+        //        if (_ParsingComplete == true)
+        //            yield break;
+        //    }
+
+        //    int streamStart = current.EndIndex;
+        //    int streamcurr = streamStart;
+
+        //    using (StringReader reader = new StringReader(s_stream.Substring(startIndex)))
+        //    {
+        //        while (reader.Peek() >= 0)
+        //        {
+        //            string line = ReadLine(reader, ref streamcurr);
+
+        //            if (string.IsNullOrWhiteSpace(line))
+        //            {
+        //                if (current.ItemType == ItemTypes.TodoItem)
+        //                {
+        //                    _lineCache.Add(current.StartIndex, current);
+        //                    if (itemType == ItemTypes.TodoItem)
+        //                        yield return current;
+
+        //                    current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //                else if (current.ItemType == ItemTypes.Section)
+        //                {
+        //                    _lineCache.Add(current.StartIndex, current);
+        //                    if (itemType == ItemTypes.Section)
+        //                        yield return current;
+
+        //                    current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //                else if (current.ItemType == ItemTypes.WhiteLine)
+        //                {
+        //                    _lineCache.Add(current.StartIndex, current);
+        //                    current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //                else
+        //                {
+        //                    current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //            }
+        //            else if (IsTextLine(line))
+        //            {
+        //                if (current.ItemType == ItemTypes.TodoItem)
+        //                {
+        //                    current.EndIndex = streamcurr;
+        //                    streamStart = streamcurr;
+        //                }
+        //                else if (current.ItemType == ItemTypes.Section)
+        //                {
+        //                    current.EndIndex = streamcurr;
+        //                    streamStart = streamcurr;
+        //                }
+        //                else if (current.ItemType == ItemTypes.WhiteLine)
+        //                {
+        //                    _lineCache.Add(current.StartIndex, current);
+        //                    current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //                else
+        //                {
+        //                    current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+
+        //            }
+        //            else if (IsTodo(line))
+        //            {
+        //                if (current.ItemType == ItemTypes.TodoItem)
+        //                {
+        //                    _lineCache.Add(current.StartIndex, current);
+        //                    if (itemType == ItemTypes.TodoItem)
+        //                        yield return current;
+
+        //                    current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //                else if (current.ItemType == ItemTypes.Section)
+        //                {
+        //                    _lineCache.Add(current.StartIndex, current);
+        //                    if (itemType == ItemTypes.Section)
+        //                        yield return current;
+
+        //                    current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //                else if (current.ItemType == ItemTypes.WhiteLine)
+        //                {
+        //                    _lineCache.Add(current.StartIndex, current);
+        //                    current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //                else
+        //                {
+        //                    current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+        //                    streamStart = streamcurr;
+        //                }
+        //            }
+        //        }
+
+        //        if (current.ItemType == ItemTypes.TodoItem)
+        //        {
+        //            _lineCache.Add(current.StartIndex, current);
+        //            _ParsingComplete = true;
+        //            if (itemType == ItemTypes.TodoItem)
+        //                yield return current;
+        //        }
+        //        else if (current.ItemType == ItemTypes.Section)
+        //        {
+        //            _lineCache.Add(current.StartIndex, current);
+        //            _ParsingComplete = true;
+        //            if (itemType == ItemTypes.Section)
+        //                yield return current;
+        //        }
+        //        else if (current.ItemType == ItemTypes.WhiteLine)
+        //        {
+        //            _lineCache.Add(current.StartIndex, current);
+        //            _ParsingComplete = true;
+        //        }
+        //    }
+        //}
+
 
 
         internal IEnumerable<TodoToken> GetObject(int startIndex, ItemTypes itemType)
         {
             TodoToken current = new TodoToken(ItemTypes.None, 0, 0);
 
-            int streamStart = startIndex;
+            if (_lineCache.Count > 0)
+            {
+                foreach (int key in _lineCache.Keys.Where(k => k >= startIndex))
+                {
+                    current = _lineCache[key];
+                    if (current.ItemType == itemType)
+                        yield return current;
+                }
+
+                if (_ParsingComplete == true)
+                    yield break;
+            }
+
+            int streamStart = current.EndIndex;
             int streamcurr = streamStart;
 
             using (StringReader reader = new StringReader(s_stream.Substring(startIndex)))
@@ -180,7 +332,7 @@ namespace STodoLib
                     {
                         if (current.ItemType == ItemTypes.TodoItem)
                         {
-                            _lineCache.Add(current);
+                            _lineCache.Add(current.StartIndex, current);
                             if (itemType == ItemTypes.TodoItem)
                                 yield return current;
 
@@ -189,7 +341,7 @@ namespace STodoLib
                         }
                         else if (current.ItemType == ItemTypes.Section)
                         {
-                            _lineCache.Add(current);
+                            _lineCache.Add(current.StartIndex, current);
                             if (itemType == ItemTypes.Section)
                                 yield return current;
 
@@ -198,7 +350,7 @@ namespace STodoLib
                         }
                         else if (current.ItemType == ItemTypes.WhiteLine)
                         {
-                            _lineCache.Add(current);
+                            _lineCache.Add(current.StartIndex, current);
                             current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
                             streamStart = streamcurr;
                         }
@@ -222,7 +374,7 @@ namespace STodoLib
                         }
                         else if (current.ItemType == ItemTypes.WhiteLine)
                         {
-                            _lineCache.Add(current);
+                            _lineCache.Add(current.StartIndex, current);
                             current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
                             streamStart = streamcurr;
                         }
@@ -237,7 +389,7 @@ namespace STodoLib
                     {
                         if (current.ItemType == ItemTypes.TodoItem)
                         {
-                            _lineCache.Add(current);
+                            _lineCache.Add(current.StartIndex, current);
                             if (itemType == ItemTypes.TodoItem)
                                 yield return current;
 
@@ -246,7 +398,7 @@ namespace STodoLib
                         }
                         else if (current.ItemType == ItemTypes.Section)
                         {
-                            _lineCache.Add(current);
+                            _lineCache.Add(current.StartIndex, current);
                             if (itemType == ItemTypes.Section)
                                 yield return current;
 
@@ -255,7 +407,7 @@ namespace STodoLib
                         }
                         else if (current.ItemType == ItemTypes.WhiteLine)
                         {
-                            _lineCache.Add(current);
+                            _lineCache.Add(current.StartIndex, current);
                             current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
                             streamStart = streamcurr;
                         }
@@ -269,19 +421,22 @@ namespace STodoLib
 
                 if (current.ItemType == ItemTypes.TodoItem)
                 {
-                    _lineCache.Add(current);
+                    _lineCache.Add(current.StartIndex, current);
+                    _ParsingComplete = true;
                     if (itemType == ItemTypes.TodoItem)
                         yield return current;
                 }
                 else if (current.ItemType == ItemTypes.Section)
                 {
-                    _lineCache.Add(current);
+                    _lineCache.Add(current.StartIndex, current);
+                    _ParsingComplete = true;
                     if (itemType == ItemTypes.Section)
                         yield return current;
                 }
                 else if (current.ItemType == ItemTypes.WhiteLine)
                 {
-                    _lineCache.Add(current);
+                    _lineCache.Add(current.StartIndex, current);
+                    _ParsingComplete = true;
                 }
             }
         }
@@ -289,11 +444,9 @@ namespace STodoLib
 
 
 
-
         public override ReadOnlyCollection<TodoFileSection> GetTodoSections()
         {
-            return (from i in GetObject(0, ItemTypes.Section)
-                    select new TodoFileSection(i, this)).ToList().AsReadOnly();
+            return GetObject(0, ItemTypes.Section).Select(i => new TodoFileSection(i, this)).ToList().AsReadOnly();
 
 
 
@@ -301,16 +454,15 @@ namespace STodoLib
 
         public override ReadOnlyCollection<TodoFileItem> GetTodoItems()
         {
-            return (from i in GetObject(0, ItemTypes.TodoItem)
-                    select new TodoFileItem(i, this)).ToList().AsReadOnly();
+            return GetObject(0, ItemTypes.TodoItem).Select(i => new TodoFileItem(i, this)).ToList().AsReadOnly();
         }
     }
 
-    public abstract class TodoSection
+    public abstract class TodoSection<TItem> where TItem : TodoItem
     {
         public abstract string Text { get; set; }
 
-
+        public abstract ReadOnlyCollection<TItem> GetTodoItems();
     }
 
     public abstract class TodoItem
@@ -319,7 +471,7 @@ namespace STodoLib
     }
 
 
-    public class TodoFileSection : TodoSection
+    public class TodoFileSection : TodoSection<TodoFileItem>
     {
         private readonly TodoFileObject.TodoToken _TodoToken;
         private readonly TodoFileObject _TodoFileObject;
@@ -340,6 +492,11 @@ namespace STodoLib
             {
                 throw new NotImplementedException();
             }
+        }
+
+        public override ReadOnlyCollection<TodoFileItem> GetTodoItems()
+        {
+            return _TodoFileObject.GetObject(_TodoToken.EndIndex, TodoFileObject.ItemTypes.TodoItem).Select(i => new TodoFileItem(i, _TodoFileObject)).ToList().AsReadOnly();
         }
 
         public override string ToString()
@@ -373,7 +530,7 @@ namespace STodoLib
 
         public override string ToString()
         {
-            return _TodoFileObject.GetDebugString((int)_TodoToken.StartIndex,(int) (_TodoToken.EndIndex - _TodoToken.StartIndex));
+            return _TodoFileObject.GetDebugString((int)_TodoToken.StartIndex, (int)(_TodoToken.EndIndex - _TodoToken.StartIndex));
         }
 
 

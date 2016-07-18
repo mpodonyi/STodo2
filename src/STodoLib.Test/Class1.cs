@@ -24,29 +24,6 @@ namespace STodoLib.Test
 
         }
 
-
-        //[Fact]
-        //public void GetTodoItemsOf1stSectionTest()
-        //{
-        //    var obj = TodoObjectFactory.GetFileObject(@"TestData\Todo.txt");
-
-
-        //    var sect = obj.GetTodoSections();
-
-        //    Assert.Equal(2, sect.Count);
-
-        //    Assert.Equal("whatever", sect[0].Text.Trim());
-
-        //    Assert.Equal("whatever2", sect[1].Text.Trim());
-
-
-
-        //}
-
-
-
-
-
         [Fact]
         public void GetAllTodoItemsTest()
         {
@@ -61,10 +38,24 @@ namespace STodoLib.Test
             Assert.Equal("was here", sect[1].Text.Trim());
 
             Assert.Equal("no content", sect[2].Text.Trim());
-
-
-
         }
+
+
+
+        //[Fact]
+        //public void GetTodoItemsOf1stSectionTest()
+        //{
+        //    var obj = TodoObjectFactory.GetFileObject(@"TestData\Todo.txt");
+        //    var sect = obj.GetTodoSections()[0];
+        //    var items = sect.GetTodoItems();
+
+        //    Assert.Equal(2, items.Count);
+
+        //    Assert.Equal("mike\r\ntest", items[0].Text.Trim());
+
+        //    Assert.Equal("was here", items[1].Text.Trim());
+        //}
+
 
 
 
