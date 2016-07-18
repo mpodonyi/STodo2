@@ -161,7 +161,197 @@ namespace STodoLib
             return retval;
         }
 
-        //internal IEnumerable<TodoToken> GetObject(int startIndex, Func<TodoToken, bool> func)
+        internal IEnumerable<TodoToken> GetObject(int startIndex, Func<TodoToken, bool> func, bool greedy)
+        {
+            TodoToken current = new TodoToken(ItemTypes.None, 0, 0);
+
+            if (_lineCache.Count > 0)
+            {
+                foreach (int key in _lineCache.Keys.Where(k => k >= startIndex))
+                {
+                    current = _lineCache[key];
+                    if (func(current))
+                    {
+                        yield return current;
+                    }
+                    else
+                    {
+                        if (!greedy)
+                            yield break;
+                    }
+                }
+
+                if (_ParsingComplete == true)
+                    yield break;
+            }
+
+            int streamStart = current.EndIndex;
+            int streamcurr = streamStart;
+
+            using (StringReader reader = new StringReader(s_stream.Substring(startIndex)))
+            {
+                while (reader.Peek() >= 0)
+                {
+                    string line = ReadLine(reader, ref streamcurr);
+
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        if (current.ItemType == ItemTypes.TodoItem)
+                        {
+                            _lineCache.Add(current.StartIndex, current);
+                            if (func(current))
+                            {
+                                yield return current;
+                            }
+                            else
+                            {
+                                if (!greedy)
+                                    yield break;
+                            }
+
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                        else if (current.ItemType == ItemTypes.Section)
+                        {
+                            _lineCache.Add(current.StartIndex, current);
+                            if (func(current))
+                            {
+                                yield return current;
+                            }
+                            else
+                            {
+                                if (!greedy)
+                                    yield break;
+                            }
+
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                        else if (current.ItemType == ItemTypes.WhiteLine)
+                        {
+                            _lineCache.Add(current.StartIndex, current);
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                        else
+                        {
+                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                    }
+                    else if (IsTextLine(line))
+                    {
+                        if (current.ItemType == ItemTypes.TodoItem)
+                        {
+                            current.EndIndex = streamcurr;
+                            streamStart = streamcurr;
+                        }
+                        else if (current.ItemType == ItemTypes.Section)
+                        {
+                            current.EndIndex = streamcurr;
+                            streamStart = streamcurr;
+                        }
+                        else if (current.ItemType == ItemTypes.WhiteLine)
+                        {
+                            _lineCache.Add(current.StartIndex, current);
+                            current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                        else
+                        {
+                            current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+
+                    }
+                    else if (IsTodo(line))
+                    {
+                        if (current.ItemType == ItemTypes.TodoItem)
+                        {
+                            _lineCache.Add(current.StartIndex, current);
+                            if (func(current))
+                            {
+                                yield return current;
+                            }
+                            else
+                            {
+                                if (!greedy)
+                                    yield break;
+                            }
+
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                        else if (current.ItemType == ItemTypes.Section)
+                        {
+                            _lineCache.Add(current.StartIndex, current);
+                            if (func(current))
+                            {
+                                yield return current;
+                            }
+                            else
+                            {
+                                if (!greedy)
+                                    yield break;
+                            }
+
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                        else if (current.ItemType == ItemTypes.WhiteLine)
+                        {
+                            _lineCache.Add(current.StartIndex, current);
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                        else
+                        {
+                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
+                            streamStart = streamcurr;
+                        }
+                    }
+                }
+
+                if (current.ItemType == ItemTypes.TodoItem)
+                {
+                    _lineCache.Add(current.StartIndex, current);
+                    _ParsingComplete = true;
+                    if (func(current))
+                    {
+                        yield return current;
+                    }
+                    else
+                    {
+                        if (!greedy)
+                            yield break;
+                    }
+                }
+                else if (current.ItemType == ItemTypes.Section)
+                {
+                    _lineCache.Add(current.StartIndex, current);
+                    _ParsingComplete = true;
+                    if (func(current))
+                    {
+                        yield return current;
+                    }
+                    else
+                    {
+                        if (!greedy)
+                            yield break;
+                    }
+                }
+                else if (current.ItemType == ItemTypes.WhiteLine)
+                {
+                    _lineCache.Add(current.StartIndex, current);
+                    _ParsingComplete = true;
+                }
+            }
+        }
+
+
+
+        //internal IEnumerable<TodoToken> GetObject(int startIndex, ItemTypes itemType)
         //{
         //    TodoToken current = new TodoToken(ItemTypes.None, 0, 0);
 
@@ -302,151 +492,10 @@ namespace STodoLib
 
 
 
-        internal IEnumerable<TodoToken> GetObject(int startIndex, ItemTypes itemType)
-        {
-            TodoToken current = new TodoToken(ItemTypes.None, 0, 0);
-
-            if (_lineCache.Count > 0)
-            {
-                foreach (int key in _lineCache.Keys.Where(k => k >= startIndex))
-                {
-                    current = _lineCache[key];
-                    if (current.ItemType == itemType)
-                        yield return current;
-                }
-
-                if (_ParsingComplete == true)
-                    yield break;
-            }
-
-            int streamStart = current.EndIndex;
-            int streamcurr = streamStart;
-
-            using (StringReader reader = new StringReader(s_stream.Substring(startIndex)))
-            {
-                while (reader.Peek() >= 0)
-                {
-                    string line = ReadLine(reader, ref streamcurr);
-
-                    if (string.IsNullOrWhiteSpace(line))
-                    {
-                        if (current.ItemType == ItemTypes.TodoItem)
-                        {
-                            _lineCache.Add(current.StartIndex, current);
-                            if (itemType == ItemTypes.TodoItem)
-                                yield return current;
-
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                        else if (current.ItemType == ItemTypes.Section)
-                        {
-                            _lineCache.Add(current.StartIndex, current);
-                            if (itemType == ItemTypes.Section)
-                                yield return current;
-
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                        else if (current.ItemType == ItemTypes.WhiteLine)
-                        {
-                            _lineCache.Add(current.StartIndex, current);
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                        else
-                        {
-                            current = new TodoToken(ItemTypes.WhiteLine, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                    }
-                    else if (IsTextLine(line))
-                    {
-                        if (current.ItemType == ItemTypes.TodoItem)
-                        {
-                            current.EndIndex = streamcurr;
-                            streamStart = streamcurr;
-                        }
-                        else if (current.ItemType == ItemTypes.Section)
-                        {
-                            current.EndIndex = streamcurr;
-                            streamStart = streamcurr;
-                        }
-                        else if (current.ItemType == ItemTypes.WhiteLine)
-                        {
-                            _lineCache.Add(current.StartIndex, current);
-                            current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                        else
-                        {
-                            current = new TodoToken(ItemTypes.Section, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-
-                    }
-                    else if (IsTodo(line))
-                    {
-                        if (current.ItemType == ItemTypes.TodoItem)
-                        {
-                            _lineCache.Add(current.StartIndex, current);
-                            if (itemType == ItemTypes.TodoItem)
-                                yield return current;
-
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                        else if (current.ItemType == ItemTypes.Section)
-                        {
-                            _lineCache.Add(current.StartIndex, current);
-                            if (itemType == ItemTypes.Section)
-                                yield return current;
-
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                        else if (current.ItemType == ItemTypes.WhiteLine)
-                        {
-                            _lineCache.Add(current.StartIndex, current);
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                        else
-                        {
-                            current = new TodoToken(ItemTypes.TodoItem, streamStart, streamcurr);
-                            streamStart = streamcurr;
-                        }
-                    }
-                }
-
-                if (current.ItemType == ItemTypes.TodoItem)
-                {
-                    _lineCache.Add(current.StartIndex, current);
-                    _ParsingComplete = true;
-                    if (itemType == ItemTypes.TodoItem)
-                        yield return current;
-                }
-                else if (current.ItemType == ItemTypes.Section)
-                {
-                    _lineCache.Add(current.StartIndex, current);
-                    _ParsingComplete = true;
-                    if (itemType == ItemTypes.Section)
-                        yield return current;
-                }
-                else if (current.ItemType == ItemTypes.WhiteLine)
-                {
-                    _lineCache.Add(current.StartIndex, current);
-                    _ParsingComplete = true;
-                }
-            }
-        }
-
-
-
 
         public override ReadOnlyCollection<TodoFileSection> GetTodoSections()
         {
-            return GetObject(0, ItemTypes.Section).Select(i => new TodoFileSection(i, this)).ToList().AsReadOnly();
+            return GetObject(0, t => t.ItemType == ItemTypes.Section, true).Select(i => new TodoFileSection(i, this)).ToList().AsReadOnly();
 
 
 
@@ -454,7 +503,7 @@ namespace STodoLib
 
         public override ReadOnlyCollection<TodoFileItem> GetTodoItems()
         {
-            return GetObject(0, ItemTypes.TodoItem).Select(i => new TodoFileItem(i, this)).ToList().AsReadOnly();
+            return GetObject(0, t => t.ItemType == ItemTypes.TodoItem, true).Select(i => new TodoFileItem(i, this)).ToList().AsReadOnly();
         }
     }
 
@@ -496,7 +545,7 @@ namespace STodoLib
 
         public override ReadOnlyCollection<TodoFileItem> GetTodoItems()
         {
-            return _TodoFileObject.GetObject(_TodoToken.EndIndex, TodoFileObject.ItemTypes.TodoItem).Select(i => new TodoFileItem(i, _TodoFileObject)).ToList().AsReadOnly();
+            return _TodoFileObject.GetObject(_TodoToken.EndIndex, t => t.ItemType == TodoFileObject.ItemTypes.TodoItem , false).Select(i => new TodoFileItem(i, _TodoFileObject)).ToList().AsReadOnly();
         }
 
         public override string ToString()

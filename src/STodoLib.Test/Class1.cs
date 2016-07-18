@@ -42,19 +42,19 @@ namespace STodoLib.Test
 
 
 
-        //[Fact]
-        //public void GetTodoItemsOf1stSectionTest()
-        //{
-        //    var obj = TodoObjectFactory.GetFileObject(@"TestData\Todo.txt");
-        //    var sect = obj.GetTodoSections()[0];
-        //    var items = sect.GetTodoItems();
+        [Fact]
+        public void GetTodoItemsOf1stSectionTest()
+        {
+            var obj = TodoObjectFactory.GetFileObject(@"TestData\Todo.txt");
+            var sect = obj.GetTodoSections()[0];
+            var items = sect.GetTodoItems();
 
-        //    Assert.Equal(2, items.Count);
+            Assert.Equal(2, items.Count);
 
-        //    Assert.Equal("mike\r\ntest", items[0].Text.Trim());
+            Assert.Equal("mike\r\ntest", items[0].Text.Trim());
 
-        //    Assert.Equal("was here", items[1].Text.Trim());
-        //}
+            Assert.Equal("was here", items[1].Text.Trim());
+        }
 
 
 
