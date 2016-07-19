@@ -32,12 +32,12 @@ namespace STodoLib
     public class TodoFileObject : TodoObject<TodoFileSection, TodoFileItem>, IDisposable
     {
         // private readonly MemoryStream stream;
-        private readonly string s_stream;
+        private readonly StringBuilder  s_stream;
 
 
         public TodoFileObject(string path)
         {
-            s_stream = File.ReadAllText(path);
+            s_stream = new StringBuilder(File.ReadAllText(path));
 
             //stream = new MemoryStream();
             //using (FileStream fs = File.OpenRead(path))
@@ -58,7 +58,7 @@ namespace STodoLib
 
         internal string GetDebugString(int start, int length)
         {
-            return s_stream.Substring(start, length);
+            return s_stream.ToString(start, length);
         }
 
 
@@ -66,11 +66,11 @@ namespace STodoLib
         {
             if (todoToken.ItemType == ItemTypes.Section)
             {
-                return s_stream.Substring((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
+                return s_stream.ToString((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
             }
             if (todoToken.ItemType == ItemTypes.TodoItem)
             {
-                string retval = s_stream.Substring((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
+                string retval = s_stream.ToString((int)todoToken.StartIndex, (int)(todoToken.EndIndex - todoToken.StartIndex));
 
                 return TrimStart(TrimStart(retval, "[]"), "[x]");
             }
@@ -188,7 +188,7 @@ namespace STodoLib
             int streamStart = current.EndIndex;
             int streamcurr = streamStart;
 
-            using (StringReader reader = new StringReader(s_stream.Substring(startIndex)))
+            using (StringReader reader = new StringReader(s_stream.ToString(startIndex, s_stream.Length - startIndex)))
             {
                 while (reader.Peek() >= 0)
                 {
