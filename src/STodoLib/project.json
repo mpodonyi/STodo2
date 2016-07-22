@@ -2,12 +2,13 @@
   "version": "1.0.0-*",
 
   "dependencies": {
+    "Google.Apis.Drive.v3": "1.14.0.554",
     "NETStandard.Library": "1.6.0"
   },
 
   "frameworks": {
     "netstandard1.6": {
-      "imports": "dnxcore50"
+      "imports": [ "dnxcore50", "portable-net45+netcore45+wpa81+wp8" ]
     }
   }
 }
