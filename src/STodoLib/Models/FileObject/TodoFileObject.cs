@@ -1,34 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace STodoLib
+namespace STodoLib.Models.FileObject
 {
-    public static class TodoObjectFactory
-    {
-        public static TodoObject<TodoFileSection, TodoFileItem> GetFileObject(string path)
-        {
-            return new TodoFileObject(path);
-        }
-
-    }
-
-
-    public abstract class TodoObject<TSect, TItem>
-        where TSect : TodoSection<TItem>
-        where TItem : TodoItem
-    {
-        public abstract ReadOnlyCollection<TSect> GetTodoSections();
-
-        public abstract ReadOnlyCollection<TItem> GetTodoItems();
-
-
-    }
-
     public class TodoFileObject : TodoObject<TodoFileSection, TodoFileItem>, IDisposable
     {
         // private readonly MemoryStream stream;
@@ -83,8 +61,8 @@ namespace STodoLib
             var retVal = word.TrimStart();
 
             return retVal.StartsWith(trimWord)
-                       ? retVal.Substring(trimWord.Length)
-                       : word;
+                ? retVal.Substring(trimWord.Length)
+                : word;
         }
 
 
@@ -506,85 +484,4 @@ namespace STodoLib
             return GetObject(0, t => t.ItemType == ItemTypes.TodoItem, true).Select(i => new TodoFileItem(i, this)).ToList().AsReadOnly();
         }
     }
-
-    public abstract class TodoSection<TItem> where TItem : TodoItem
-    {
-        public abstract string Text { get; set; }
-
-        public abstract ReadOnlyCollection<TItem> GetTodoItems();
-    }
-
-    public abstract class TodoItem
-    {
-        public abstract string Text { get; set; }
-    }
-
-
-    public class TodoFileSection : TodoSection<TodoFileItem>
-    {
-        private readonly TodoFileObject.TodoToken _TodoToken;
-        private readonly TodoFileObject _TodoFileObject;
-
-        internal TodoFileSection(TodoFileObject.TodoToken todoToken, TodoFileObject todoFileObject)
-        {
-            _TodoToken = todoToken;
-            _TodoFileObject = todoFileObject;
-        }
-
-        public override string Text
-        {
-            get
-            {
-                return _TodoFileObject.GetText(_TodoToken);
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public override ReadOnlyCollection<TodoFileItem> GetTodoItems()
-        {
-            return _TodoFileObject.GetObject(_TodoToken.EndIndex, t => t.ItemType == TodoFileObject.ItemTypes.TodoItem , false).Select(i => new TodoFileItem(i, _TodoFileObject)).ToList().AsReadOnly();
-        }
-
-        public override string ToString()
-        {
-            return _TodoFileObject.GetDebugString((int)_TodoToken.StartIndex, (int)(_TodoToken.EndIndex - _TodoToken.StartIndex));
-        }
-    }
-
-    public class TodoFileItem : TodoItem
-    {
-        private readonly TodoFileObject.TodoToken _TodoToken;
-        private readonly TodoFileObject _TodoFileObject;
-
-        internal TodoFileItem(TodoFileObject.TodoToken todoToken, TodoFileObject todoFileObject)
-        {
-            _TodoToken = todoToken;
-            _TodoFileObject = todoFileObject;
-        }
-
-        public override string Text
-        {
-            get
-            {
-                return _TodoFileObject.GetText(_TodoToken);
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public override string ToString()
-        {
-            return _TodoFileObject.GetDebugString((int)_TodoToken.StartIndex, (int)(_TodoToken.EndIndex - _TodoToken.StartIndex));
-        }
-
-
-    }
-
-
-
 }
